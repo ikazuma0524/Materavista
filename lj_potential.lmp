@@ -1,0 +1,5 @@
+# Lennard-Jones potential parameters for pair_coeff command
+# This file will be included in the LAMMPS input script
+
+# Format: pair_coeff atom_type1 atom_type2 epsilon sigma cutoff
+pair_coeff 1 1 1.0 1.0 2.5 

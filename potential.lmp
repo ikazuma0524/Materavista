@@ -1,0 +1,4 @@
+# Lennard-Jones potential parameters
+# Format: atom_type epsilon sigma cutoff
+
+1 1.0 1.0 2.5 

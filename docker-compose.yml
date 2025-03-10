@@ -1,0 +1,81 @@
+version: '3.8'
+
+services:
+  fastapi:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.fastapi
+    ports:
+      - "8001:8000"
+    volumes:
+      - ./backend:/app
+      - simulation-data:/app/simulations
+    env_file:
+      - ./backend/.env
+    networks:
+      - app-network
+    depends_on:
+      - postgres
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3003:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - fastapi
+      - hasura
+    environment:
+      - NEXT_PUBLIC_API_URL=http://fastapi:8000
+      - NEXT_PUBLIC_HASURA_URL=http://hasura:8080/v1/graphql
+      - NODE_OPTIONS=--max-http-header-size=16384 --max-old-space-size=4096
+    networks:
+      - app-network
+
+  postgres:
+    image: postgres:14
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD: postgrespassword
+      POSTGRES_USER: postgres
+      POSTGRES_DB: lammps_db
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  hasura:
+    image: hasura/graphql-engine:v2.25.1
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      HASURA_GRAPHQL_DATABASE_URL: postgres://postgres:postgrespassword@postgres:5432/lammps_db
+      HASURA_GRAPHQL_ENABLE_CONSOLE: "true"
+      HASURA_GRAPHQL_DEV_MODE: "true"
+      HASURA_GRAPHQL_ENABLED_LOG_TYPES: startup, http-log, webhook-log, websocket-log, query-log
+      HASURA_GRAPHQL_ADMIN_SECRET: myadminsecretkey
+      HASURA_GRAPHQL_UNAUTHORIZED_ROLE: anonymous
+      HASURA_GRAPHQL_JWT_SECRET: '{"type":"HS256", "key":"your-jwt-secret-key-min-32-chars-long"}'
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  simulation-data:
+  postgres-data: 

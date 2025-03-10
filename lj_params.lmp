@@ -1,0 +1,5 @@
+# Lennard-Jones potential parameters
+# This file is included in the LAMMPS input script
+
+# Define pair coefficients
+pair_coeff 1 1 1.0 1.0 
